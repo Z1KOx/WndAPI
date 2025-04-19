@@ -36,7 +36,8 @@ Wnd::Wnd( int width, int height, const char* title ) noexcept
 	);
 
 	if ( nullptr == m_hWnd ) {
-		exit( 0 );
+		::MessageBox( nullptr, "Failed to create window", "Error", MB_ICONERROR );
+		std::exit( EXIT_FAILURE );
 	}
 
 	::SetWindowLongPtr( m_hWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>( this ) );
