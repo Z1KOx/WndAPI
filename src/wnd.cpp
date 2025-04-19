@@ -24,14 +24,15 @@ Wnd::WndClass::~WndClass() noexcept {
 Wnd::Wnd( int width, int height, const char* title ) noexcept
 	: m_width( width ), m_height( height )
 {
-	m_hWnd = ::CreateWindow( WndClass::getName(),
-		                     title,
-		                     WS_OVERLAPPEDWINDOW,
-		                     CW_USEDEFAULT, CW_USEDEFAULT,
-		                     m_width, m_height,
-		                     nullptr, nullptr,
-		                     WndClass::getInstance(),
-		                     this
+	m_hWnd = ::CreateWindow(
+		WndClass::getName(),
+		title,
+		WS_OVERLAPPEDWINDOW,
+		CW_USEDEFAULT, CW_USEDEFAULT,
+		m_width, m_height,
+		nullptr, nullptr,
+		WndClass::getInstance(),
+		this
 	);
 
 	if ( nullptr == m_hWnd ) {
@@ -47,9 +48,9 @@ Wnd::~Wnd() noexcept {
 }
 
 LRESULT __stdcall Wnd::WndProcBridge( HWND hWnd,
-	                                  UINT Msg,
-	                                  WPARAM wParam,
-	                                  LPARAM lParam )
+                                      UINT Msg,
+                                      WPARAM wParam,
+                                      LPARAM lParam )
 {
 	Wnd* pWnd;
 	::ZeroMemory( &pWnd, sizeof( pWnd ) );
@@ -72,9 +73,9 @@ LRESULT __stdcall Wnd::WndProcBridge( HWND hWnd,
 }
 
 LRESULT __stdcall Wnd::WndProc( HWND hWnd, 
-	                            UINT Msg,
-	                            WPARAM wParam,
-	                            LPARAM lParam )
+                                UINT Msg,
+                                WPARAM wParam,
+                                LPARAM lParam )
 {
 	if ( Msg == WM_CLOSE )
 	{
