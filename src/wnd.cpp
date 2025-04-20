@@ -3,6 +3,49 @@
 Wnd::WndClass Wnd::WndClass::m_wndClass;
 HINSTANCE Wnd::WndClass::m_hInst = ::GetModuleHandle( nullptr );
 
+Wnd::Exception::Exception( int line, const char* file, const std::string& msg ) noexcept
+	: m_line( line ), m_file( file ), m_msg( msg ), m_hr( E_FAIL )
+{ }
+
+Wnd::Exception::Exception( int line, const char* file, HRESULT hr ) noexcept
+	: m_line( line ), m_file( file ), m_hr( hr )
+{
+	m_msg = translateErrorCode( hr );
+}
+
+Wnd::Exception::Exception( int line, const char* file, HRESULT hr, const std::string& msg ) noexcept
+	: m_line( line ), m_file( file ), m_hr( hr ), m_msg( msg )
+{
+	m_msg += "\n[SYSTEM]: ";
+	m_msg += translateErrorCode( hr );
+}
+
+char const* Wnd::Exception::what() const noexcept
+{
+	std::ostringstream oss;
+	oss << "Window Error\n"
+		<< "[FILE]: " << m_file << '\n'
+		<< "[LINE]: " << m_line << '\n'
+		<< "[CUSTOM_MESSAGE]: " << m_msg;
+	m_whatBuffer = oss.str();
+	return m_whatBuffer.c_str();
+}
+
+std::string Wnd::Exception::translateErrorCode(HRESULT hr) const noexcept
+{
+	char* pMsgBuf{ nullptr };
+	auto len = ::FormatMessage(
+		FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM |
+		FORMAT_MESSAGE_IGNORE_INSERTS,
+		nullptr, hr, MAKELANGID( LANG_NEUTRAL, SUBLANG_DEFAULT ),
+		reinterpret_cast<LPSTR>( &pMsgBuf ), 0, nullptr
+	);
+
+	std::string errorStr{ ( len == 0 ) ? "Unknown error code" : pMsgBuf };
+	LocalFree( pMsgBuf );
+	return errorStr;
+}
+
 Wnd::WndClass::WndClass() noexcept
 {
 	WNDCLASSEX wcx;
@@ -21,7 +64,7 @@ Wnd::WndClass::~WndClass() noexcept {
 	::UnregisterClass( getName(), getInstance() );
 }
 
-Wnd::Wnd( int width, int height, const char* title ) noexcept
+Wnd::Wnd( int width, int height, const char* title )
 	: m_width( width ), m_height( height )
 {
 	m_hWnd = ::CreateWindow(
@@ -34,10 +77,9 @@ Wnd::Wnd( int width, int height, const char* title ) noexcept
 		WndClass::getInstance(),
 		this
 	);
-
+	
 	if ( nullptr == m_hWnd ) {
-		::MessageBox( nullptr, "Failed to create window", "Error", MB_ICONERROR );
-		std::exit( EXIT_FAILURE );
+		throw WND_EXCEPT_HR_MSG( GetLastError(), "hWnd is nullptr" );
 	}
 
 	::SetWindowLongPtr( m_hWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>( this ) );
