@@ -16,7 +16,7 @@ public:
 		Exception& operator=( const Exception& ) = delete;
 	
 	public:
-		char const* what() const noexcept override;
+		[[nodiscard]] char const* what() const noexcept override;
 
 	private:
 		[[nodiscard]] int getLine() const noexcept { return m_line; }
