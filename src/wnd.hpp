@@ -3,6 +3,7 @@
 
 class Wnd
 {
+	// Custom exception class for handling errors in the window
 public:
 	class Exception : public std::exception
 	{
@@ -16,7 +17,7 @@ public:
 		Exception& operator=( const Exception& ) = delete;
 	
 	public:
-		[[nodiscard]] char const* what() const noexcept override;
+		char const* what() const noexcept override;
 
 	private:
 		[[nodiscard]] int getLine() const noexcept { return m_line; }
@@ -29,10 +30,12 @@ public:
 		int m_line = 0;
 		const char* m_file = nullptr;
 		std::string m_msg;
-		HRESULT m_hr;
-		mutable std::string m_whatBuffer;
+		HRESULT m_hr = 0L;
+		mutable std::string m_whatBuffer; // 'mutable' So we can override the 'what()' virtual function
 	};
 
+	// Singleton to ensure only one window class is created
+private:
 	class WndClass
 	{
 	private:
@@ -50,12 +53,15 @@ public:
 		static WndClass m_wndClass;
 		static HINSTANCE m_hInst;
 	};
+
+	// Handles window creation, messages, and cleanup
 public:
 	Wnd( int width, int height, const char* title );
 	~Wnd() noexcept;
 	Wnd( const Wnd& ) = delete;
 	Wnd& operator=( const Wnd& ) = delete;
 
+	// Static WndProc redirects messages to this class's WndProc via the 'this' pointer
 public:
 	static LRESULT __stdcall WndProcBridge( HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam );
 	LRESULT __stdcall WndProc( HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam );
@@ -65,6 +71,7 @@ private:
 	HWND m_hWnd = nullptr;
 };
 
+// Macros for creating exceptions with error codes or custom messages
 #define WND_EXCEPT_HR( hr )            Wnd::Exception( __LINE__, __FILE__, hr )
 #define WND_EXCEPT_MSG( msg )          Wnd::Exception( __LINE__, __FILE__, msg )
 #define WND_EXCEPT_HR_MSG( hr, msg )   Wnd::Exception( __LINE__, __FILE__, hr, msg )

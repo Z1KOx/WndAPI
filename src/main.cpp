@@ -8,14 +8,14 @@ int __stdcall WinMain(
 {
 	try
 	{
-		Wnd wnd( 800, 600, "Our Title" );
+		const Wnd wnd( 800, 600, "Our Title" );
 
 		MSG msg;
 		::ZeroMemory( &msg, sizeof( msg ) );
-		while ( GetMessage( &msg, nullptr, 0, 0 ) > 0 )
+		while ( ::GetMessage( &msg, nullptr, 0u, 0u ) > 0 )
 		{
 			::TranslateMessage( &msg );
-			::DispatchMessage( &msg );
+			::DispatchMessage( &msg ); // Forwards message to the window procedure
 		}
 		
 		if ( msg.wParam ) {

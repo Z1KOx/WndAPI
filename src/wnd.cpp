@@ -38,10 +38,10 @@ std::string Wnd::Exception::translateErrorCode(HRESULT hr) const noexcept
 		FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM |
 		FORMAT_MESSAGE_IGNORE_INSERTS,
 		nullptr, hr, MAKELANGID( LANG_NEUTRAL, SUBLANG_DEFAULT ),
-		reinterpret_cast<LPSTR>( &pMsgBuf ), 0, nullptr
+		reinterpret_cast<LPSTR>( &pMsgBuf ), 0UL, nullptr
 	);
-
-	std::string errorStr{ ( len == 0 ) ? "Unknown error code" : pMsgBuf };
+	
+	std::string errorStr{ ( len == 0UL ) ? "Unknown error code" : pMsgBuf };
 	LocalFree( pMsgBuf );
 	return errorStr;
 }
@@ -75,14 +75,13 @@ Wnd::Wnd( int width, int height, const char* title )
 		m_width, m_height,
 		nullptr, nullptr,
 		WndClass::getInstance(),
-		this
+		this // Passes 'this' so WndProcBridge can access the class instance
 	);
 	
 	if ( nullptr == m_hWnd ) {
 		throw WND_EXCEPT_HR_MSG( GetLastError(), "hWnd is nullptr" );
 	}
 
-	::SetWindowLongPtr( m_hWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>( this ) );
 	::ShowWindow( m_hWnd, SW_SHOWDEFAULT );
 }
 
@@ -98,16 +97,19 @@ LRESULT __stdcall Wnd::WndProcBridge( HWND hWnd,
 	Wnd* pWnd;
 	::ZeroMemory( &pWnd, sizeof( pWnd ) );
 
+	// On WM_NCCREATE: extract 'this' pointer and store it in WinAPI userdata
 	if ( Msg == WM_NCCREATE )
 	{
 		auto* pCreate = reinterpret_cast<CREATESTRUCT*>( lParam );
 		pWnd = reinterpret_cast<Wnd*>( pCreate->lpCreateParams );
 		::SetWindowLongPtr( hWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>( pWnd ) );
 	}
+	// On other messages: retrieve 'this' pointer from WinAPI userdata
 	else {
 		pWnd = reinterpret_cast<Wnd*>( ::GetWindowLongPtr( hWnd, GWLP_USERDATA ) );
 	}
 
+	// Forward message to the instance WndProc
 	if ( pWnd ) {
 		return pWnd->WndProc( hWnd, Msg, wParam, lParam );
 	}
