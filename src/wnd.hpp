@@ -8,9 +8,9 @@ public:
 	class Exception : public std::exception
 	{
 	public:
-		Exception( int line, const char* file, const std::string& msg ) noexcept;
+		Exception( int line, const char* file, std::string_view msg ) noexcept;
 		Exception( int line, const char* file, HRESULT hr ) noexcept;
-		Exception( int line, const char* file, HRESULT hr, const std::string& msg ) noexcept;
+		Exception( int line, const char* file, HRESULT hr, std::string_view msg ) noexcept;
 
 		~Exception() noexcept = default;
 		Exception( const Exception& ) = delete;

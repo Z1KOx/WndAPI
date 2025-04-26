@@ -3,7 +3,7 @@
 Wnd::WndClass Wnd::WndClass::m_wndClass;
 HINSTANCE Wnd::WndClass::m_hInst = ::GetModuleHandle( nullptr );
 
-Wnd::Exception::Exception( int line, const char* file, const std::string& msg ) noexcept
+Wnd::Exception::Exception( int line, const char* file, std::string_view msg ) noexcept
 	: m_line( line ), m_file( file ), m_msg( msg ), m_hr( E_FAIL )
 { }
 
@@ -13,7 +13,7 @@ Wnd::Exception::Exception( int line, const char* file, HRESULT hr ) noexcept
 	m_msg = translateErrorCode( hr );
 }
 
-Wnd::Exception::Exception( int line, const char* file, HRESULT hr, const std::string& msg ) noexcept
+Wnd::Exception::Exception( int line, const char* file, HRESULT hr, std::string_view msg ) noexcept
 	: m_line( line ), m_file( file ), m_hr( hr ), m_msg( msg )
 {
 	m_msg += "\n[SYSTEM]: ";
@@ -31,7 +31,7 @@ char const* Wnd::Exception::what() const noexcept
 	return m_whatBuffer.c_str();
 }
 
-std::string Wnd::Exception::translateErrorCode(HRESULT hr) const noexcept
+std::string Wnd::Exception::translateErrorCode( HRESULT hr ) const noexcept
 {
 	char* pMsgBuf{ nullptr };
 	auto len = ::FormatMessage(
@@ -42,7 +42,11 @@ std::string Wnd::Exception::translateErrorCode(HRESULT hr) const noexcept
 	);
 	
 	std::string errorStr{ ( len == 0UL ) ? "Unknown error code" : pMsgBuf };
-	LocalFree( pMsgBuf );
+	
+	if ( pMsgBuf ) {
+		LocalFree( pMsgBuf );
+	}
+
 	return errorStr;
 }
 
