@@ -20,11 +20,11 @@ public:
 		char const* what() const noexcept override;
 
 	private:
-		[[nodiscard]] int getLine() const noexcept { return m_line; }
-		[[nodiscard]] std::string getFile() const noexcept { return m_file; }
-		[[nodiscard]] std::string getMsg() const noexcept { return m_msg; }
-		[[nodiscard]] HRESULT getErrorCode() const noexcept { return m_hr; }
-		[[nodiscard]] std::string translateErrorCode( HRESULT hr ) const noexcept;
+		[[nodiscard]] inline int getLine() const noexcept { return m_line; }
+		[[nodiscard]] inline std::string getFile() const noexcept { return m_file; }
+		[[nodiscard]] inline std::string getMsg() const noexcept { return m_msg; }
+		[[nodiscard]] inline HRESULT getErrorCode() const noexcept { return m_hr; }
+		[[nodiscard]] inline std::string translateErrorCode( HRESULT hr ) const noexcept;
 	
 	private:
 		int m_line = 0;
@@ -47,7 +47,7 @@ private:
 	public:
 		[[nodiscard]] static const char* getName() noexcept { return m_wndClassName; }
 		[[nodiscard]] static HINSTANCE getInstance() noexcept { return m_hInst; }
-	
+
 	private:
 		static constexpr const char* m_wndClassName = "ClassName";
 		static WndClass m_wndClass;
@@ -61,13 +61,30 @@ public:
 	Wnd( const Wnd& ) = delete;
 	Wnd& operator=( const Wnd& ) = delete;
 
-	// Static WndProc redirects messages to this class's WndProc via the 'this' pointer
 public:
-	static LRESULT __stdcall WndProcBridge( HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam );
-	LRESULT __stdcall WndProc( HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam );
+	[[nodiscard]] HWND getHWND() const noexcept { return m_hWnd; }
+
+	// Window message handling and rendering
+public:
+	static LRESULT __stdcall wndProcBridge( HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam );
+	LRESULT __stdcall wndProc( HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam );
+	[[nodiscard]] std::optional<int> processMsgs() const noexcept;
+	void renderFrame();
+
+	// Window and Direct3D initialization and cleanup
+private:
+	void initWindow();
+	void initD3D();
+	void cleanupD3D() noexcept;
 
 private:
+	Microsoft::WRL::ComPtr<ID3D11Device> m_pDevice;
+	Microsoft::WRL::ComPtr<IDXGISwapChain> m_pSwap;
+	Microsoft::WRL::ComPtr<ID3D11DeviceContext> m_pContext;
+	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> m_pTarget;
+
 	int m_width = 0, m_height = 0;
+	const char* m_title = nullptr;
 	HWND m_hWnd = nullptr;
 };
 

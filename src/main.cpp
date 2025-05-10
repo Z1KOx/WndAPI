@@ -1,5 +1,7 @@
 ﻿#include "wnd.hpp"
 
+namespace wrl = Microsoft::WRL;
+
 int __stdcall WinMain(
 	HINSTANCE hInstance,
 	HINSTANCE hPrevInstance,
@@ -8,18 +10,15 @@ int __stdcall WinMain(
 {
 	try
 	{
-		const Wnd wnd( 800, 600, "Our Title" );
+		Wnd wnd( 800, 600, "Our Title" );
 
-		MSG msg;
-		::ZeroMemory( &msg, sizeof( msg ) );
-		while ( ::GetMessage( &msg, nullptr, 0u, 0u ) > 0 )
+		while (true)
 		{
-			::TranslateMessage( &msg );
-			::DispatchMessage( &msg ); // Forwards message to the window procedure
-		}
-		
-		if ( msg.wParam ) {
-			return static_cast<int>( msg.wParam );
+			if (auto exitCode = wnd.processMsgs()) {
+				return *exitCode;
+			}
+
+			wnd.renderFrame();
 		}
 	}
 	catch ( const Wnd::Exception& e ) {

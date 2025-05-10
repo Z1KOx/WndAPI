@@ -20,6 +20,11 @@ if( WIN32 )
     add_executable( WndAPI WIN32 ${WndAPI_SRC})
     target_precompile_headers( WndAPI PRIVATE src/pch.h )
 
+    target_link_libraries( WndAPI
+        d3d11
+        dxgi
+    )
+
     if( MSVC )
         set( CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>" )
 
