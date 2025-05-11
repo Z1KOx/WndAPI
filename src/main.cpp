@@ -1,7 +1,5 @@
 ﻿#include "wnd.hpp"
 
-namespace wrl = Microsoft::WRL;
-
 int __stdcall WinMain(
 	HINSTANCE hInstance,
 	HINSTANCE hPrevInstance,
@@ -12,13 +10,15 @@ int __stdcall WinMain(
 	{
 		Wnd wnd( 800, 600, "Our Title" );
 
-		while (true)
+		while ( true )
 		{
-			if (auto exitCode = wnd.processMsgs()) {
+			if ( auto exitCode = wnd.processMsgs() ) {
 				return *exitCode;
 			}
 
 			wnd.renderFrame();
+
+			std::this_thread::sleep_for( std::chrono::milliseconds( 5 ) );
 		}
 	}
 	catch ( const Wnd::Exception& e ) {
