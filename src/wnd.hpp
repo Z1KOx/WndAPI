@@ -1,18 +1,19 @@
 #pragma once
 #include "pch.h"
+#include "d3d.hpp"
 
 class Wnd
 {
-	// Custom exception class for handling errors in the window
 public:
+	// Custom exception class for handling errors in the window
 	class Exception : public std::exception
 	{
 	public:
 		Exception( int line, const char* file, std::string_view msg ) noexcept;
 		Exception( int line, const char* file, HRESULT hr ) noexcept;
 		Exception( int line, const char* file, HRESULT hr, std::string_view msg ) noexcept;
-
 		~Exception() noexcept = default;
+
 		Exception( const Exception& ) = delete;
 		Exception& operator=( const Exception& ) = delete;
 	
@@ -27,20 +28,21 @@ public:
 		[[nodiscard]] inline std::string translateErrorCode( HRESULT hr ) const noexcept;
 	
 	private:
-		int m_line = 0;
-		const char* m_file = nullptr;
-		std::string m_msg;
-		HRESULT m_hr = 0L;
 		mutable std::string m_whatBuffer; // 'mutable' So we can override the 'what()' virtual function
+		const char*         m_file = nullptr;
+		std::string         m_msg;
+		HRESULT             m_hr = 0L;
+		int                 m_line = 0;
 	};
 
-	// Singleton to ensure only one window class is created
 private:
+	// Singleton to ensure only one window class is created
 	class WndClass
 	{
 	private:
 		WndClass() noexcept;
 		~WndClass() noexcept;
+
 		WndClass( const WndClass& ) = delete;
 		WndClass& operator=( const WndClass& ) = delete;
 
@@ -50,42 +52,37 @@ private:
 
 	private:
 		static constexpr const char* m_wndClassName = "ClassName";
-		static WndClass m_wndClass;
-		static HINSTANCE m_hInst;
+		static WndClass              m_wndClass;
+		static HINSTANCE             m_hInst;
 	};
 
-	// Handles window creation, messages, and cleanup
 public:
 	Wnd( int width, int height, const char* title );
 	~Wnd() noexcept;
+	
 	Wnd( const Wnd& ) = delete;
 	Wnd& operator=( const Wnd& ) = delete;
 
 public:
 	[[nodiscard]] HWND getHWND() const noexcept { return m_hWnd; }
+	[[nodiscard]] bool getRunningState() const noexcept { return m_isRunning; }
 
-	// Window message handling and rendering
 public:
-	static LRESULT __stdcall wndProcBridge( HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam );
-	LRESULT __stdcall wndProc( HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam );
 	[[nodiscard]] std::optional<int> processMsgs() const noexcept;
 	void renderFrame();
 
-	// Window and Direct3D initialization and cleanup
 private:
-	void initWindow();
-	void initD3D();
-	void cleanupD3D() noexcept;
+	static LRESULT __stdcall wndProcBridge( HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam );
+	LRESULT __stdcall wndProc( HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam );
 
 private:
-	Microsoft::WRL::ComPtr<ID3D11Device> m_pDevice;
-	Microsoft::WRL::ComPtr<IDXGISwapChain> m_pSwap;
-	Microsoft::WRL::ComPtr<ID3D11DeviceContext> m_pContext;
-	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> m_pTarget;
-
-	int m_width = 0, m_height = 0;
-	const char* m_title = nullptr;
-	HWND m_hWnd = nullptr;
+	std::unique_ptr<D3D> m_pD3D;
+	const char*          m_title = nullptr;
+	POINTS               m_pos = { 0 };
+	HWND                 m_hWnd = nullptr;
+	bool                 m_isRunning = true;
+	int                  m_width = 0;
+	int                  m_height = 0;
 };
 
 // Macros for creating exceptions with error codes or custom messages

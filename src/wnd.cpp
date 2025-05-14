@@ -50,6 +50,9 @@ std::string Wnd::Exception::translateErrorCode( HRESULT hr ) const noexcept
 	return errorStr;
 }
 
+
+
+
 Wnd::WndClass::WndClass() noexcept
 {
 	WNDCLASSEX wcx;
@@ -68,105 +71,33 @@ Wnd::WndClass::~WndClass() noexcept {
 	::UnregisterClass( getName(), getInstance() );
 }
 
-Wnd::Wnd(int width, int height, const char* title)
-	: m_width(width), m_height(height), m_title(title)
+Wnd::Wnd( int width, int height, const char* title )
+	: m_width( width ), m_height( height ), m_title( title )
 {
-	initWindow();
-	initD3D();
-}
-
-Wnd::~Wnd() noexcept 
-{
-	cleanupD3D();
-	if ( m_hWnd ) {
-		::DestroyWindow( m_hWnd );
-	}
-}
-
-void Wnd::initWindow()
-{
-	WNDCLASSEX wcx;
-	::ZeroMemory( &wcx, sizeof( wcx ) );
-	wcx.cbSize = sizeof( wcx );
-	wcx.style = CS_OWNDC;
-	wcx.lpfnWndProc = wndProcBridge;
-	wcx.hInstance = WndClass::getInstance();
-	wcx.lpszClassName = WndClass::getName();
-	::RegisterClassEx( &wcx );
-
 	m_hWnd = ::CreateWindow(
 		WndClass::getName(),
-		m_title,
-		WS_OVERLAPPEDWINDOW,
-		CW_USEDEFAULT, CW_USEDEFAULT,
+		title,
+		WS_POPUP,
+		250, 250,
 		m_width, m_height,
-		nullptr,
-		nullptr,
+		nullptr, nullptr,
 		WndClass::getInstance(),
 		this // Passes 'this' so WndProcBridge can access the class instance
 	);
 
-	if ( !m_hWnd ) {
+	if ( nullptr == m_hWnd ) {
 		throw WND_EXCEPT_HR_MSG( GetLastError(), "hWnd is nullptr" );
 	}
 
-	ShowWindow( m_hWnd, SW_SHOWDEFAULT );
+	::ShowWindow( m_hWnd, SW_SHOWDEFAULT );
+
+	m_pD3D = std::make_unique<D3D>( m_hWnd, m_width, m_height );
 }
 
-void Wnd::initD3D()
+Wnd::~Wnd() noexcept 
 {
-	// Configure the swap chain descriptor
-	DXGI_SWAP_CHAIN_DESC sd;
-	::ZeroMemory( &sd, sizeof( sd ) );
-	sd.BufferDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-	sd.SampleDesc.Count = 1U;
-	sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-	sd.BufferCount = 1U;
-	sd.OutputWindow = m_hWnd;
-	sd.Windowed = TRUE;
-
-	UINT flags{ 0U };
-#ifndef NDEBUG
-	flags |= D3D11_CREATE_DEVICE_DEBUG;
-#endif
-
-	// Create the Direct3D device and swap chain
-	HRESULT hr{ D3D11CreateDeviceAndSwapChain(
-		nullptr,
-		D3D_DRIVER_TYPE_HARDWARE,
-		nullptr,
-		flags,
-		nullptr,
-		0U,
-		D3D11_SDK_VERSION,
-		&sd,
-		&m_pSwap,
-		&m_pDevice,
-		nullptr,
-		&m_pContext
-	) };
-	if ( FAILED( hr ) ) {
-		throw WND_EXCEPT_HR_MSG( hr, "D3D11CreateDeviceAndSwapChain failed" );
-	}
-
-	// Retrieve the backbuffer from the swap chain
-	Microsoft::WRL::ComPtr<ID3D11Resource> pBackBuffer;
-	hr = m_pSwap->GetBuffer( 0U, __uuidof( ID3D11Resource ), &pBackBuffer );
-	if ( FAILED( hr ) ) {
-		throw WND_EXCEPT_HR_MSG( hr, "GetBuffer failed" );
-	}
-
-	// Create the render target view for the backbuffer
-	hr = m_pDevice->CreateRenderTargetView( pBackBuffer.Get(), nullptr, &m_pTarget );
-	if ( FAILED( hr ) ) {
-		throw WND_EXCEPT_HR_MSG( hr, "CreateRenderTargetView failed" );
-	}
-}
-
-void Wnd::cleanupD3D() noexcept
-{
-	if ( m_pContext ) {
-		m_pContext->ClearState();
+	if ( m_hWnd ) {
+		::DestroyWindow( m_hWnd );
 	}
 }
 
@@ -198,15 +129,59 @@ LRESULT __stdcall Wnd::wndProcBridge( HWND hWnd,
 	return ::DefWindowProc( hWnd, Msg, wParam, lParam );
 }
 
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler( HWND hWnd,
+                                                              UINT msg,
+                                                              WPARAM wParam,
+                                                              LPARAM lParam );
+
 LRESULT __stdcall Wnd::wndProc( HWND hWnd, 
                                 UINT Msg,
                                 WPARAM wParam,
                                 LPARAM lParam )
 {
-	if ( Msg == WM_CLOSE )
+	if ( ImGui_ImplWin32_WndProcHandler( hWnd, Msg, wParam, lParam ) ) { return true; }
+	if ( false == m_isRunning ) {
+		::PostQuitMessage(0);
+		return 0;
+	}
+
+	switch ( Msg )
+	{
+	case WM_CLOSE:
 	{
 		::PostQuitMessage( 0 );
-		return 0;
+	} return 0;
+
+	case WM_LBUTTONDOWN: {
+		m_pos = MAKEPOINTS( lParam );
+	} return 0;
+	
+	case WM_MOUSEMOVE: 
+	{
+		if ( wParam == MK_LBUTTON )
+		{
+			const auto points = MAKEPOINTS( lParam );
+			auto rect = ::RECT{ };
+
+			::GetWindowRect( m_hWnd, &rect );
+
+			rect.left += points.x - m_pos.x;
+			rect.top += points.y - m_pos.y;
+
+			if ( m_pos.x >= 0 &&
+				m_pos.x <= m_width &&
+				m_pos.y >= 0 && m_pos.y <= 19)
+				::SetWindowPos(
+					m_hWnd,
+					HWND_TOPMOST,
+					rect.left,
+					rect.top,
+					0, 0,
+					SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOZORDER
+				);
+		}
+
+	}return 0;
 	}
 
 	return ::DefWindowProc( hWnd, Msg, wParam, lParam );
@@ -215,7 +190,7 @@ LRESULT __stdcall Wnd::wndProc( HWND hWnd,
 std::optional<int> Wnd::processMsgs() const noexcept
 {
 	MSG msg;
-	ZeroMemory( &msg, sizeof( msg ) );
+	::ZeroMemory( &msg, sizeof( msg ) );
 
 	// Retrieve and remove messages from the queue
 	while ( ::PeekMessage( &msg, nullptr, 0U, 0U, PM_REMOVE ) )
@@ -233,11 +208,25 @@ std::optional<int> Wnd::processMsgs() const noexcept
 
 void Wnd::renderFrame()
 {
-	const float CLEAR_COLOR[4] = { .4f, .2f, 1.f, 1.f };
+	m_pD3D->beginFrame();
 
-	// Clear the render target view with the specified color
-	m_pContext->ClearRenderTargetView( m_pTarget.Get(), CLEAR_COLOR );
+	ImGui::PushStyleVar( ImGuiStyleVar_WindowBorderSize, 0.f );
+	ImGui::SetNextWindowPos( { 0.f, 0.f } );
+	ImGui::SetNextWindowSize( { static_cast<float>( m_width ), static_cast<float>( m_height ) } );
+	ImGui::Begin( m_title, &m_isRunning, ImGuiWindowFlags_NoResize |
+	                                     ImGuiWindowFlags_NoSavedSettings |
+	                                     ImGuiWindowFlags_NoCollapse );
+	static bool s_Clicked = false;
+	ImGui::TextColored( ImVec4( ImColor( 255, 0, 0, 255 ) ), "Button" );
+	if ( ImGui::Button( "Click", { 55.f, 25.f } ) ) {
+		s_Clicked = true;
+	}
+
+	if ( s_Clicked ) {
+		ImGui::TextColored( ImVec4( ImColor( 0, 255, 0, 255 ) ), "Clicked" );
+	}
 	
-	// Present the rendered frame to the screen
-	m_pSwap->Present( 1U, 0U );
+	ImGui::PopStyleVar();
+	ImGui::End();
+	m_pD3D->endFrame();
 }

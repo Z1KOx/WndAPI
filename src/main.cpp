@@ -8,9 +8,9 @@ int __stdcall WinMain(
 {
 	try
 	{
-		Wnd wnd( 800, 600, "Our Title" );
+		Wnd wnd( 550, 350, "Our Title" );
 
-		while ( true )
+		while ( wnd.getRunningState() )
 		{
 			if ( auto exitCode = wnd.processMsgs() ) {
 				return *exitCode;
