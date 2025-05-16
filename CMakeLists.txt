@@ -1,4 +1,4 @@
-﻿cmake_minimum_required( VERSION 3.8 )
+cmake_minimum_required( VERSION 3.8 )
 project( WndAPI
          LANGUAGES CXX
 )
@@ -14,11 +14,38 @@ if( WIN32 )
     set( WndAPI_SRC
         src/main.cpp
         src/wnd.cpp
+        src/d3d.cpp
+    )
+    
+    set( IMGUI_DIR 
+        ${CMAKE_SOURCE_DIR}/imgui
+    )
+    set( IMGUI_SRC
+        ${IMGUI_DIR}/imgui.cpp
+        ${IMGUI_DIR}/imgui_draw.cpp
+        ${IMGUI_DIR}/imgui_widgets.cpp
+        ${IMGUI_DIR}/imgui_tables.cpp
+        ${IMGUI_DIR}/imgui_impl_win32.cpp
+        ${IMGUI_DIR}/imgui_impl_dx11.cpp
+        ${IMGUI_DIR}/imgui_demo.cpp
     )
 
-    list( APPEND WndAPI_SRC src/pch.cpp )
-    add_executable( WndAPI WIN32 ${WndAPI_SRC})
-    target_precompile_headers( WndAPI PRIVATE src/pch.h )
+    list( APPEND WndAPI_SRC
+        src/pch.cpp 
+    )
+
+    add_executable( WndAPI WIN32 
+        ${WndAPI_SRC}
+        ${IMGUI_SRC}
+    )
+
+    target_precompile_headers( WndAPI PRIVATE 
+        src/pch.h 
+    )
+
+    target_include_directories( WndAPI PRIVATE
+        ${IMGUI_DIR}
+    )
 
     target_link_libraries( WndAPI
         d3d11
