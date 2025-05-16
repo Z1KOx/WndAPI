@@ -19,6 +19,7 @@
 #include <chrono>
 #include <optional>
 #include <memory>
+#include <thread>
 
 #include <wrl/client.h>
 #include <d3d11.h>
