@@ -1,4 +1,4 @@
-cmake_minimum_required( VERSION 3.8 )
+﻿cmake_minimum_required( VERSION 3.8 )
 project( WndAPI
          LANGUAGES CXX
 )
@@ -17,10 +17,10 @@ if( WIN32 )
         src/d3d.cpp
     )
     
-    set( IMGUI_DIR 
+    set(IMGUI_DIR 
         ${CMAKE_SOURCE_DIR}/imgui
     )
-    set( IMGUI_SRC
+    set(IMGUI_SRC
         ${IMGUI_DIR}/imgui.cpp
         ${IMGUI_DIR}/imgui_draw.cpp
         ${IMGUI_DIR}/imgui_widgets.cpp
@@ -43,7 +43,7 @@ if( WIN32 )
         src/pch.h 
     )
 
-    target_include_directories( WndAPI PRIVATE
+    target_include_directories(WndAPI PRIVATE
         ${IMGUI_DIR}
     )
 

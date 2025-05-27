@@ -14,8 +14,10 @@ public:
 		Exception( int line, const char* file, HRESULT hr, std::string_view msg ) noexcept;
 		~Exception() noexcept = default;
 
-		Exception( const Exception& ) = delete;
-		Exception& operator=( const Exception& ) = delete;
+		Exception( const Exception& ) = default;
+		Exception( Exception&& ) noexcept = default;
+		Exception& operator=( const Exception& ) = default;
+		Exception& operator=( Exception&& ) noexcept = default;
 	
 	public:
 		char const* what() const noexcept override;

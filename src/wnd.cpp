@@ -165,12 +165,12 @@ LRESULT __stdcall Wnd::wndProc( HWND hWnd,
 
 			::GetWindowRect( m_hWnd, &rect );
 
-			rect.left += points.x - m_pos.x;
-			rect.top += points.y - m_pos.y;
+			rect.left += ( points.x - m_pos.x );
+			rect.top += ( points.y - m_pos.y );
 
-			if ( m_pos.x >= 0 &&
-				m_pos.x <= m_width &&
-				m_pos.y >= 0 && m_pos.y <= 19)
+			if ( m_pos.x >= 0 && m_pos.x <= m_width &&
+				m_pos.y >= 0 && m_pos.y <= 19 )
+			{
 				::SetWindowPos(
 					m_hWnd,
 					HWND_TOPMOST,
@@ -179,6 +179,7 @@ LRESULT __stdcall Wnd::wndProc( HWND hWnd,
 					0, 0,
 					SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOZORDER
 				);
+			}
 		}
 
 	}return 0;
