@@ -106,37 +106,50 @@ set_target_properties( WndAPI
         OUTPUT_NAME "WndAPI"
 )
 
-
+# Create the output directory for compiled shaders (only once)
 file( MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/shader" )
 
-# Vertex Shader
-add_custom_command(
-    OUTPUT "${CMAKE_BINARY_DIR}/shader/vertexShader.cso"
-    COMMAND fxc
-            /T vs_5_0
-            /E main
-            /Fo "${CMAKE_BINARY_DIR}/shader/vertexShader.cso"
-            "${CMAKE_SOURCE_DIR}/shader/vertexShader.hlsl"
-    DEPENDS "${CMAKE_SOURCE_DIR}/shader/vertexShader.hlsl"
-    COMMENT "Compiling vertexShader.hlsl → ${CMAKE_BINARY_DIR}/shader/vertexShader.cso"
+# Collect all HLSL shader source files in the shader directory
+file( GLOB SHADER_SOURCES
+      "${CMAKE_SOURCE_DIR}/shader/*.hlsl"
 )
 
-# Pixel Shader
-add_custom_command(
-    OUTPUT "${CMAKE_BINARY_DIR}/shader/pixelShader.cso"
-    COMMAND fxc
-            /T ps_5_0
-            /E main
-            /Fo "${CMAKE_BINARY_DIR}/shader/pixelShader.cso"
-            "${CMAKE_SOURCE_DIR}/shader/pixelShader.hlsl"
-    DEPENDS "${CMAKE_SOURCE_DIR}/shader/pixelShader.hlsl"
-    COMMENT "Compiling pixelShader.hlsl → ${CMAKE_BINARY_DIR}/shader/pixelShader.cso"
-)
+# Initialize an empty list to hold the generated .cso outputs
+set( SHADER_OUTPUTS )
 
+# Loop over each shader source file
+foreach( SRC IN LISTS SHADER_SOURCES )
+    get_filename_component( NAME_WE ${SRC} NAME_WE )
+    string( TOLOWER "${NAME_WE}" NAME_LOWER )
+
+    if( NAME_LOWER MATCHES "pixel" )
+        set( PROFILE ps_5_0 )
+    else()
+        set( PROFILE vs_5_0 )
+    endif()
+
+    set( OUT "${CMAKE_BINARY_DIR}/shader/${NAME_WE}.cso" )
+
+    # Add a custom command to compile the HLSL source into a .cso file
+    add_custom_command(
+        OUTPUT ${OUT}
+        COMMAND fxc
+                /T ${PROFILE}
+                /E main
+                /Fo ${OUT}
+                ${SRC}
+        DEPENDS ${SRC}
+        COMMENT "Compiling ${NAME_WE}.hlsl → ${NAME_WE}.cso"
+        VERBATIM
+    )
+
+    list( APPEND SHADER_OUTPUTS ${OUT} )
+endforeach()
+
+# Custom target "Shaders" builds only changed shaders
 add_custom_target( Shaders ALL
     DEPENDS
-        "${CMAKE_BINARY_DIR}/shader/vertexShader.cso"
-        "${CMAKE_BINARY_DIR}/shader/pixelShader.cso"
+        ${SHADER_OUTPUTS}
 )
 
 # Export compile commands for tooling
