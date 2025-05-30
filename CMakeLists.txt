@@ -1,4 +1,4 @@
-﻿cmake_minimum_required(VERSION 3.8)
+﻿cmake_minimum_required( VERSION 3.8 )
 
 # Project declaration
 project( WndAPI 
@@ -31,6 +31,10 @@ set( APP_SOURCES
      ${CMAKE_SOURCE_DIR}/src/main.cpp
      ${CMAKE_SOURCE_DIR}/src/pch.cpp
      ${CMAKE_SOURCE_DIR}/src/wnd.cpp
+     ${CMAKE_SOURCE_DIR}/src/bindable/vertex_buffer.cpp
+     ${CMAKE_SOURCE_DIR}/src/bindable/index_buffer.cpp
+     ${CMAKE_SOURCE_DIR}/src/bindable/shader.cpp
+     ${CMAKE_SOURCE_DIR}/src/bindable/mesh.cpp
 )
 
 # Executable target
@@ -86,6 +90,7 @@ target_link_libraries( WndAPI
     PRIVATE
         d3d11
         dxgi
+        d3dcompiler
 )
 
 # Definitions
@@ -99,6 +104,39 @@ set_target_properties( WndAPI
     PROPERTIES
         WIN32_EXECUTABLE TRUE
         OUTPUT_NAME "WndAPI"
+)
+
+
+file( MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/shader" )
+
+# Vertex Shader
+add_custom_command(
+    OUTPUT "${CMAKE_BINARY_DIR}/shader/vertexShader.cso"
+    COMMAND fxc
+            /T vs_5_0
+            /E main
+            /Fo "${CMAKE_BINARY_DIR}/shader/vertexShader.cso"
+            "${CMAKE_SOURCE_DIR}/shader/vertexShader.hlsl"
+    DEPENDS "${CMAKE_SOURCE_DIR}/shader/vertexShader.hlsl"
+    COMMENT "Compiling vertexShader.hlsl → ${CMAKE_BINARY_DIR}/shader/vertexShader.cso"
+)
+
+# Pixel Shader
+add_custom_command(
+    OUTPUT "${CMAKE_BINARY_DIR}/shader/pixelShader.cso"
+    COMMAND fxc
+            /T ps_5_0
+            /E main
+            /Fo "${CMAKE_BINARY_DIR}/shader/pixelShader.cso"
+            "${CMAKE_SOURCE_DIR}/shader/pixelShader.hlsl"
+    DEPENDS "${CMAKE_SOURCE_DIR}/shader/pixelShader.hlsl"
+    COMMENT "Compiling pixelShader.hlsl → ${CMAKE_BINARY_DIR}/shader/pixelShader.cso"
+)
+
+add_custom_target( Shaders ALL
+    DEPENDS
+        "${CMAKE_BINARY_DIR}/shader/vertexShader.cso"
+        "${CMAKE_BINARY_DIR}/shader/pixelShader.cso"
 )
 
 # Export compile commands for tooling
