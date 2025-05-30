@@ -211,10 +211,14 @@ void Wnd::renderFrame()
 {
 	m_pD3D->beginFrame();
 
+	m_pD3D->drawTriangle();
+
 	ImGui::PushStyleVar( ImGuiStyleVar_WindowBorderSize, 0.f );
+	ImGui::PushStyleColor(ImGuiCol_WindowBg, IM_COL32(0, 0, 0, 0));
 	ImGui::SetNextWindowPos( { 0.f, 0.f } );
 	ImGui::SetNextWindowSize( { static_cast<float>( m_width ), static_cast<float>( m_height ) } );
 	ImGui::Begin( m_title, &m_isRunning, ImGuiWindowFlags_NoResize |
+                                         ImGuiWindowFlags_NoBackground |
 	                                     ImGuiWindowFlags_NoSavedSettings |
 	                                     ImGuiWindowFlags_NoCollapse );
 	static bool s_Clicked = false;
@@ -228,6 +232,7 @@ void Wnd::renderFrame()
 	}
 	
 	ImGui::PopStyleVar();
+	ImGui::PopStyleColor();
 	ImGui::End();
 	m_pD3D->endFrame();
 }
